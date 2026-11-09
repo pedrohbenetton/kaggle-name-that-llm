@@ -1,0 +1,9 @@
+{
+  "argmax": 0.3145,
+  "centrado_por_prompt": 0.3652,
+  "atribuicao_por_prompt": 0.4204,
+  "centrado+atribuicao": 0.4204,
+  "inferido_centrado": 0.3645,
+  "inferido_atribuicao": 0.4171,
+  "inferido_centrado+atribuicao": 0.4171
+}

@@ -29,4 +29,22 @@ for k, v in res.items():
     print(f"{k:24} {v:.4f}")
 Path("results").mkdir(exist_ok=True)
 Path("results/exp_group_post.json").write_text(json.dumps(res, indent=2), encoding="utf-8")
-np.save("results/raw_oof_tfidf_lr.npy", P) if Path("results/raw").mkdir(exist_ok=True) is None else None
+Path("results/raw").mkdir(exist_ok=True)
+np.save("results/raw/oof_tfidf_lr.npy", P)
+
+# Grupos inferidos só pelo texto, dentro de cada fold de validação (como no teste).
+from ntl.groups import infer_groups
+
+gi = np.empty(len(df), dtype=object)
+for k, (_, va) in enumerate(grouped_folds(df, 5)):
+    lab = infer_groups(df["text"].iloc[va].tolist(), per_group=18)
+    gi[va] = [f"{k}-{x}" for x in lab]
+inf = {
+    "inferido_centrado": classes[center_by_group(L, gi).argmax(1)],
+    "inferido_atribuicao": classes[assign_by_group(L, gi)],
+    "inferido_centrado+atribuicao": classes[assign_by_group(center_by_group(L, gi), gi)],
+}
+for k, v in inf.items():
+    res[k] = round(float(balanced_accuracy_score(y, v)), 4)
+    print(f"{k:30} {res[k]:.4f}")
+Path("results/exp_group_post.json").write_text(json.dumps(res, indent=2), encoding="utf-8")

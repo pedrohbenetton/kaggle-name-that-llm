@@ -14,12 +14,18 @@ LABELS: tuple[str, ...] = (
     "qwen3.8-max", "glm-5.3", "glm-5.3-flash", "kimi-k3",
 )
 
-# Local: pasta baixada do Kaggle (fora do repositório). No Kaggle: /kaggle/input/...
+# No Kaggle: /kaggle/input/... Local: pasta baixada dentro do projeto (ignorada pelo git).
+# Num notebook não existe __file__, por isso o caminho local é opcional.
+_LOCAL = (
+    str(Path(globals()["__file__"]).resolve().parents[2] / "name-that-llm" / "name-that-llm")
+    if "__file__" in globals()
+    else ""
+)
 _CANDIDATES = (
     os.environ.get("NTL_DATA", ""),
     "/kaggle/input/competitions/name-that-llm",
     "/kaggle/input/name-that-llm",
-    str(Path.home() / "Faculdade/Projetos/name-that-llm/name-that-llm"),
+    _LOCAL,
 )
 
 
