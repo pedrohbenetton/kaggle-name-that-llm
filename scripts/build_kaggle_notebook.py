@@ -22,11 +22,20 @@ model = tfidf_lr()
 model.fit(train["text"].to_numpy(), train["model"].to_numpy())
 P = model.predict_proba(test["text"].fillna("").to_numpy())
 classes = np.array(model.classes_)
-groups = infer_groups(test["text"].fillna("").tolist(), per_group=18)
-pred = classes[assign_by_group(np.log(np.clip(P, 1e-9, 1)), groups)]
+__PRED__
 path = write_submission(make_submission(test["id"].tolist(), pred.tolist()))
 print(path, len(test), "linhas")
 '''
+
+
+PRED = {
+    "group": (
+        'groups = infer_groups(test["text"].fillna("").tolist(), per_group=18)\n'
+        'pred = classes[assign_by_group(np.log(np.clip(P, 1e-9, 1)), groups)]'
+    ),
+    # diagnóstico: mesmo modelo, cada texto prevê sozinho (sem a restrição por grupo)
+    "argmax": "pred = classes[P.argmax(axis=1)]",
+}
 
 
 def module_source(name: str) -> str:
@@ -36,17 +45,19 @@ def module_source(name: str) -> str:
     return f"# ---- ntl/{name}.py ----\n" + src
 
 
-def build() -> dict:
+def build(variant: str = "group") -> dict:
     def code(s: str) -> dict:
         return {"cell_type": "code", "metadata": {}, "execution_count": None, "outputs": [],
                 "source": s.strip("\n").splitlines(True)}
 
-    intro = ("# Name That LLM: TF-IDF + regressão logística + atribuição por grupo de prompt\n\n"
+    titulo = {"group": "+ atribuição por grupo de prompt", "argmax": "(diagnóstico: sem grupos)"}
+    intro = (f"# Name That LLM: TF-IDF + regressão logística {titulo[variant]}\n\n"
              "Gerado por `scripts/build_kaggle_notebook.py` a partir de "
              "[kaggle-name-that-llm](https://github.com/pedrohbenetton/kaggle-name-that-llm). "
              "Validação: GroupKFold por prompt (balanced accuracy).")
     cells = [{"cell_type": "markdown", "metadata": {}, "source": intro.splitlines(True)}]
-    cells += [code(module_source(m)) for m in MODULES] + [code(MAIN)]
+    cells += [code(module_source(m)) for m in MODULES]
+    cells += [code(MAIN.replace("__PRED__", PRED[variant]))]
     return {"cells": cells, "metadata": {"kernelspec": {"display_name": "Python 3",
             "language": "python", "name": "python3"}}, "nbformat": 4, "nbformat_minor": 5}
 
@@ -54,6 +65,8 @@ def build() -> dict:
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="notebooks/kaggle_submission.ipynb")
+    ap.add_argument("--variant", default="group", choices=list(PRED))
     a = ap.parse_args()
-    Path(a.out).write_text(json.dumps(build(), ensure_ascii=False, indent=1), encoding="utf-8")
+    nb = build(a.variant)
+    Path(a.out).write_text(json.dumps(nb, ensure_ascii=False, indent=1), encoding="utf-8")
     print(a.out)

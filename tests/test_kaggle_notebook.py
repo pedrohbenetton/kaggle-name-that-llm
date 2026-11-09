@@ -4,18 +4,21 @@ import subprocess
 import sys
 
 import pandas as pd
+import pytest
 
 from ntl.data import LABELS
 
 
-def test_notebook_gerado_roda_offline_e_gera_submissao_valida(tmp_path, toy_train):
+@pytest.mark.parametrize("variant", ["group", "argmax"])
+def test_notebook_gerado_roda_offline_e_gera_submissao_valida(tmp_path, toy_train, variant):
     data = tmp_path / "data"
     data.mkdir()
     toy_train.to_csv(data / "train.csv", index=False)
     test = toy_train.sample(40, random_state=0)[["id", "text"]]
     test.to_csv(data / "test.csv", index=False)
     nb = tmp_path / "submit.ipynb"
-    subprocess.run([sys.executable, "scripts/build_kaggle_notebook.py", "--out", str(nb)], check=True)
+    subprocess.run([sys.executable, "scripts/build_kaggle_notebook.py", "--out", str(nb),
+                    "--variant", variant], check=True)
     code = "\n\n".join("".join(c["source"]) for c in json.loads(nb.read_text())["cells"]
                        if c["cell_type"] == "code")
     env = {**os.environ, "NTL_DATA": str(data)}
@@ -25,3 +28,4 @@ def test_notebook_gerado_roda_offline_e_gera_submissao_valida(tmp_path, toy_trai
     assert list(sub.columns) == ["id", "model"]
     assert sorted(sub["id"]) == sorted(test["id"]) and set(sub["model"]) <= set(LABELS)
     assert "from ntl" not in code and "import ntl" not in code  # autocontido
+    assert ("assign_by_group(np.log" in code) == (variant == "group")
