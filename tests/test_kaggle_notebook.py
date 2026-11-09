@@ -9,7 +9,7 @@ import pytest
 from ntl.data import LABELS
 
 
-@pytest.mark.parametrize("variant", ["group", "argmax"])
+@pytest.mark.parametrize("variant", ["group", "argmax", "v2_argmax", "v2_centrado", "v2_hungaro"])
 def test_notebook_gerado_roda_offline_e_gera_submissao_valida(tmp_path, toy_train, variant):
     data = tmp_path / "data"
     data.mkdir()
@@ -28,4 +28,6 @@ def test_notebook_gerado_roda_offline_e_gera_submissao_valida(tmp_path, toy_trai
     assert list(sub.columns) == ["id", "model"]
     assert sorted(sub["id"]) == sorted(test["id"]) and set(sub["model"]) <= set(LABELS)
     assert "from ntl" not in code and "import ntl" not in code  # autocontido
-    assert ("assign_by_group(np.log" in code) == (variant == "group")
+    main = "".join(json.loads(nb.read_text())["cells"][-1]["source"])
+    assert ("assign_by_group(" in main) == variant.endswith(("group", "hungaro"))
+    assert ("four_view_lr()" in main) == variant.startswith("v2")

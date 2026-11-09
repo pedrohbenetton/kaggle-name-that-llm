@@ -1,0 +1,63 @@
+{
+  "ari": {
+    "n/18": {
+      "completo": 0.964,
+      "desbalanceado": 0.613
+    },
+    "teto thr=0.05": {
+      "completo": 0.999,
+      "desbalanceado": 0.995
+    },
+    "teto thr=0.1": {
+      "completo": 0.964,
+      "desbalanceado": 0.971
+    },
+    "teto thr=0.15": {
+      "completo": 0.848,
+      "desbalanceado": 0.851
+    },
+    "teto thr=0.2": {
+      "completo": 0.604,
+      "desbalanceado": 0.633
+    },
+    "teto thr=0.3": {
+      "completo": 0.163,
+      "desbalanceado": 0.185
+    }
+  },
+  "thr_escolhido": 0.05,
+  "tfidf_lr": {
+    "tempo_s": 108,
+    "completo": {
+      "argmax": 0.3145,
+      "n18_centrado": 0.3645,
+      "n18_hungaro": 0.4171,
+      "teto_centrado": 0.3641,
+      "teto_hungaro": 0.4201
+    },
+    "desbalanceado": {
+      "argmax": 0.3198,
+      "n18_centrado": 0.3486,
+      "n18_hungaro": 0.3426,
+      "teto_centrado": 0.368,
+      "teto_hungaro": 0.3733
+    }
+  },
+  "four_view_lr": {
+    "tempo_s": 226,
+    "completo": {
+      "argmax": 0.3745,
+      "n18_centrado": 0.4219,
+      "n18_hungaro": 0.4734,
+      "teto_centrado": 0.4238,
+      "teto_hungaro": 0.4801
+    },
+    "desbalanceado": {
+      "argmax": 0.3755,
+      "n18_centrado": 0.3991,
+      "n18_hungaro": 0.4004,
+      "teto_centrado": 0.4218,
+      "teto_hungaro": 0.4346
+    }
+  }
+}

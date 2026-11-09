@@ -20,4 +20,5 @@ pythonpath = ["src"]
 testpaths = ["tests"]
 
 [tool.ruff]
+extend-exclude = ["notebooks"]  # gerados por scripts/build_kaggle_notebook.py
 line-length = 100
