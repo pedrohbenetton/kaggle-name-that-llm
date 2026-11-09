@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+# dados da competição: as regras do Kaggle não permitem redistribuir
+data/
+*.csv
+*.parquet
+*.zip
+results/raw/
+
+# pasta baixada do Kaggle (dados e notebooks públicos de terceiros)
+name-that-llm/
