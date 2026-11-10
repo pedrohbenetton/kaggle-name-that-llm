@@ -10,7 +10,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-MODULES = ["data", "models", "groups", "post", "submission"]  # ordem de dependência
+MODULES = ["data", "models", "groups", "post", "submission", "cv", "embed", "blend"]  # ordem de dependência
 
 MAIN = '''
 # Treina no train.csv inteiro, prevê o teste e aplica o pós-processamento da variante.
@@ -27,6 +27,62 @@ print(path, len(test), "linhas")
 '''
 
 
+MAIN_V3 = '''
+# v3: 4 visões de TF-IDF + embeddings de um LLM congelado (Qwen3-Embedding, anexado em Input),
+# misturados em log-probabilidade. O peso da mistura e o C do classificador de embeddings são
+# escolhidos por CV agrupada por prompt aqui mesmo, sobre o treino (determinístico).
+import os
+import time
+
+import numpy as np
+from sklearn.metrics import balanced_accuracy_score
+
+t0 = time.time()
+train, test = load_train(), load_test()
+Xtr, ytr = train["text"].to_numpy(), train["model"].to_numpy()
+Xte = test["text"].fillna("").to_numpy()
+folds = grouped_folds(train, 5)
+
+
+def lg(P):
+    return np.log(np.clip(P, 1e-9, 1))
+
+
+def ba(P):
+    return round(float(balanced_accuracy_score(ytr, classes[P.argmax(1)])), 4)
+
+
+P1, classes = oof_proba(four_view_lr, Xtr, ytr, folds)
+T1 = four_view_lr().fit(Xtr, ytr).predict_proba(Xte)
+print("4 visões CV", ba(P1), f"{time.time() - t0:.0f}s", flush=True)
+
+texts = [str(t) for t in Xtr] + [str(t) for t in Xte]
+if os.environ.get("NTL_FAKE_EMBED"):
+    E = fake_embed(texts)
+else:
+    mdir = find_model_dir("/kaggle/input", os.environ.get("NTL_EMB", "qwen-3-embedding"))
+    assert mdir is not None, "anexe um modelo Qwen3-Embedding em Input (Add Input > Models)"
+    print("modelo", mdir, flush=True)
+    E = embed_texts(texts, mdir)
+Etr, Ete = E[: len(Xtr)], E[len(Xtr) :]
+print("embeddings", E.shape, f"{time.time() - t0:.0f}s", flush=True)
+
+best = None
+for C in (0.01, 0.05, 0.2):
+    P2, c2 = oof_proba(lambda C=C: emb_lr(C), Etr, ytr, folds)
+    assert list(c2) == list(classes)
+    print(f"embeddings C={C} CV", ba(P2), flush=True)
+    if best is None or ba(P2) > ba(best[1]):
+        best = (C, P2)
+C, P2 = best
+T2 = emb_lr(C).fit(Etr, ytr).predict_proba(Ete)
+w, s = choose_weight(lg(P2), lg(P1), ytr, classes)
+print(f"mistura: peso embeddings={w} CV={s:.4f}", f"{time.time() - t0:.0f}s", flush=True)
+pred = classes[blend_logp([lg(T2), lg(T1)], [w, 1 - w]).argmax(1)]
+path = write_submission(make_submission(test["id"].tolist(), pred.tolist()))
+print(path, len(test), "linhas")
+'''
+
 _LOGP = "L = np.log(np.clip(P, 1e-9, 1))\n"
 _CAP = 'groups = capped_groups(test["text"].fillna("").tolist())\n'
 # variante: (modelo, código da previsão, título)
@@ -42,6 +98,7 @@ VARIANTS = {
                     ".argmax(axis=1)]", "4 visões + LR, centralização em grupos com teto"),
     "v2_hungaro": ("four_view_lr", _LOGP + _CAP + "pred = classes[assign_by_group(L, groups)]",
                    "4 visões + LR, atribuição em grupos com teto"),
+    "v3": (None, None, "4 visões + embeddings Qwen3-Embedding (mistura escolhida por CV)"),
 }
 
 
@@ -66,7 +123,8 @@ def build(variant: str = "group") -> dict:
              "públicos da competição; a implementação é própria.")
     cells = [{"cell_type": "markdown", "metadata": {}, "source": intro.splitlines(True)}]
     cells += [code(module_source(m)) for m in MODULES]
-    cells += [code(MAIN.replace("__MODEL__", model).replace("__PRED__", pred))]
+    main = MAIN_V3 if variant == "v3" else MAIN.replace("__MODEL__", model).replace("__PRED__", pred)
+    cells += [code(main)]
     return {"cells": cells, "metadata": {"kernelspec": {"display_name": "Python 3",
             "language": "python", "name": "python3"}}, "nbformat": 4, "nbformat_minor": 5}
 

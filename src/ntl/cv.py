@@ -50,3 +50,16 @@ def evaluate(factory: Callable[[], object], df: pd.DataFrame, folds: Folds) -> d
         "oof_proba": scores,
         "classes": classes if scores is not None else None,
     }
+
+
+def oof_proba(factory: Callable[[], object], X, y: np.ndarray, folds: Folds):
+    """Probabilidades fora do fold para qualquer X indexável (textos ou matriz)."""
+    P, classes = None, None
+    for tr, va in folds:
+        m = factory()
+        m.fit(X[tr], y[tr])
+        p = m.predict_proba(X[va])
+        if P is None:
+            P, classes = np.zeros((len(y), p.shape[1])), np.array(m.classes_)
+        P[va] = p
+    return P, classes

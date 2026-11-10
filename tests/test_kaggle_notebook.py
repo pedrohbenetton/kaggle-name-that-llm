@@ -9,7 +9,7 @@ import pytest
 from ntl.data import LABELS
 
 
-@pytest.mark.parametrize("variant", ["group", "argmax", "v2_argmax", "v2_centrado", "v2_hungaro"])
+@pytest.mark.parametrize("variant", ["group", "argmax", "v2_argmax", "v2_centrado", "v2_hungaro", "v3"])
 def test_notebook_gerado_roda_offline_e_gera_submissao_valida(tmp_path, toy_train, variant):
     data = tmp_path / "data"
     data.mkdir()
@@ -21,7 +21,7 @@ def test_notebook_gerado_roda_offline_e_gera_submissao_valida(tmp_path, toy_trai
                     "--variant", variant], check=True)
     code = "\n\n".join("".join(c["source"]) for c in json.loads(nb.read_text())["cells"]
                        if c["cell_type"] == "code")
-    env = {**os.environ, "NTL_DATA": str(data)}
+    env = {**os.environ, "NTL_DATA": str(data), "NTL_FAKE_EMBED": "1"}
     # `python -c` não define __file__, como num notebook
     subprocess.run([sys.executable, "-c", code], cwd=tmp_path, env=env, check=True)
     sub = pd.read_parquet(tmp_path / "submission.parquet")
@@ -30,4 +30,4 @@ def test_notebook_gerado_roda_offline_e_gera_submissao_valida(tmp_path, toy_trai
     assert "from ntl" not in code and "import ntl" not in code  # autocontido
     main = "".join(json.loads(nb.read_text())["cells"][-1]["source"])
     assert ("assign_by_group(" in main) == variant.endswith(("group", "hungaro"))
-    assert ("four_view_lr()" in main) == variant.startswith("v2")
+    assert ("four_view_lr()" in main) == variant.startswith(("v2", "v3"))
