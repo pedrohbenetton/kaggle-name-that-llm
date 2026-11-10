@@ -59,6 +59,9 @@ def embed_texts(
             out.append(torch.cat(feats, 1).cpu().numpy())
     E = np.empty((len(texts), out[0].shape[1]), dtype=np.float32)
     E[order] = np.concatenate(out)
+    del model
+    if dev == "cuda":
+        torch.cuda.empty_cache()
     return E
 
 

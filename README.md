@@ -37,6 +37,19 @@ Recuperação dos prompts (ARI): `n/18` cai de 0,96 para 0,61 no cenário desbal
 
 **Leaderboard público:** TF-IDF + LR com atribuição em grupos inferidos **0,324**; o mesmo modelo só com argmax **0,322**. O baseline transferiu (CV 0,315 → LB 0,322), mas o ganho de +0,10 da atribuição **não apareceu no teste** (+0,002, dentro do ruído). Provável causa: o teste não tem a estrutura "um texto por modelo por prompt" (veja Riscos), então a restrição que funcionava no treino não vale lá. A v2 acima testa se o problema era a forma de inferir os grupos.
 
+### Leaderboard público por versão
+
+| Versão | O que é | CV agrupada | LB público |
+|---|---|---|---|
+| v1 | TF-IDF + LR, argmax | 0,315 | 0,322 |
+| v1 | + atribuição em n/18 grupos | 0,417 | 0,324 |
+| v2 | 4 visões + centralização em grupos com teto | 0,424 | 0,339 |
+| v2 | 4 visões + atribuição em grupos com teto | 0,480 | 0,345 |
+| v3 | 4 visões + embeddings congelados do Qwen3-Embedding-4B (peso 0,1) | 0,418 | **0,389** |
+| v4 | v3 + Qwen3-Embedding-4B ajustado com LoRA (2 folds, um por GPU) | — | — |
+
+O pós-processamento por grupo de prompt nunca transferiu para o teste; o que sobe a nota é o modelo. A v3 é a primeira em que a CV (sem truque de grupo) e o LB andam juntos.
+
 ## O que aprendi com os dados
 
 - **Cada prompt tem um texto de cada modelo** (150 prompts × 18 modelos). Isso tem duas consequências.

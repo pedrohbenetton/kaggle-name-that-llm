@@ -29,3 +29,26 @@ def choose_weight(La, Lb, y, classes, grid=None) -> tuple[float, float]:
         if s >= best[0]:
             best = (s, float(w))
     return best[1], best[0]
+
+
+def choose_weights(Ls, y, classes, step: float = 0.1) -> tuple[tuple[float, ...], float]:
+    """Pesos (somando 1, passo `step`) da mistura de log-probabilidades com maior balanced
+    accuracy. Um modelo que piora a mistura recebe peso 0, então ele não atrapalha."""
+    k = round(1 / step)
+    classes = np.asarray(classes)
+    best: tuple[float, tuple[float, ...]] = (-1.0, ())
+
+    def grid(n, left):
+        if n == 1:
+            yield (left,)
+            return
+        for i in range(left + 1):
+            for rest in grid(n - 1, left - i):
+                yield (i, *rest)
+
+    for combo in grid(len(Ls), k):
+        w = tuple(c / k for c in combo)
+        s = float(balanced_accuracy_score(y, classes[blend_logp(Ls, w).argmax(1)]))
+        if s > best[0]:
+            best = (s, w)
+    return best[1], best[0]

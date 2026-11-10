@@ -22,3 +22,15 @@ testpaths = ["tests"]
 [tool.ruff]
 extend-exclude = ["notebooks"]  # gerados por scripts/build_kaggle_notebook.py
 line-length = 100
+
+[project.optional-dependencies]
+# só para testar localmente o código de GPU com um modelo minúsculo; no Kaggle já vem instalado
+nn = ["torch>=2.4", "transformers>=4.51", "peft>=0.13", "tokenizers>=0.20"]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
