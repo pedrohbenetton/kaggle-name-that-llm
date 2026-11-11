@@ -28,7 +28,7 @@ CALL = '''    # --- Invariantes tipográficas mineradas no treino (pedrohbenetto
 '''
 NOTE = (
     "> **Cópia modificada por pedrohbenetton.** Única mudança: invariantes tipográficas "
-    "negativas mineradas no train.csv (ex.: travessão sem espaço nunca aparece em "
+    "negativas mineradas no train.csv (ex.: travessão, com ou sem espaço, nunca aparece em "
     "gemini-3.1/3.6/3.8; apóstrofo reto nunca em gpt-5.6-sol; aspas retas nunca em "
     "gpt-5.6-luna/sol/terra, gpt-6-astra, qwen3.8-max, gemini-3.7), aplicadas antes do argmax "
     "final. Cada regra é reverificada no treino em tempo de execução. Todo o resto é do "
